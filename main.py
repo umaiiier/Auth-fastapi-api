@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Request
 from pydantic import BaseModel, EmailStr
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -60,3 +60,21 @@ def login(credentials: AuthCredentials):
         }
     except Exception:
         raise HTTPException(status_code=401, detail={"error": "Invalid login credentials"})
+
+# --- STAGE 2 ROUTES ---
+
+@app.get("/public/info", status_code=status.HTTP_200_OK)
+def public_info():
+    return {"message": "Welcome stranger! This info is public."}
+
+@app.get("/protected/profile")
+def protected_profile_unverified(request: Request):
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail={"error": "Access token required"})
+    
+    token = auth_header.split(" ")[1] if len(auth_header.split(" ")) > 1 else None
+    if not token:
+        raise HTTPException(status_code=401, detail={"error": "Access token required"})
+        
+    return {"message": "Token presented, verification pending in Stage 3"}
